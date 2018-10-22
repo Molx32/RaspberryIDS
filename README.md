@@ -9,7 +9,8 @@ Raspberry Pi IDS is a university project which aims to plug a Raspberry Pi on a 
 ``` sh
 $ pip intall dash
 $ pip install dash-html-components
-$ pîp install dash-core-components
+$ pip install dash-core-components
+$ pip install dash-table-experiment
 $ pip install pandas
 ```
 
