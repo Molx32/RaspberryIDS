@@ -1,39 +1,60 @@
 import dash
 import dash_core_components as dcc
 import dash_html_components as html
+import dash_table_experiments as dt
+from dash.dependencies import Input, Output, State
 import pandas as pd
 
-#df = pd.read_csv(
-#    'https://gist.githubusercontent.com/chriddyp/'
-#    'c78bf172206ce24f77d6363a2d754b59/raw/'
-#    'c353e8ef842413cae56ae3920b8fd78468aa4cb2/'
-#    'usa-agricultural-exports-2011.csv')
 
-df= pd.read_csv('data/data.csv')
+# INPUT FILES / READ DATA
+# This file will be updated by 'scan.py', and read by the web server
+INPUT_SCAN = 'data/scan.csv'
+DATA_TABLE = pd.read_csv(INPUT_SCAN, sep=',')
 
-def generate_table(dataframe, max_rows=10):
-    return html.Table(
-        # Header
-        [html.Tr([html.Th(col) for col in dataframe.columns])] +
-
-        # Body
-        [html.Tr([
-            html.Td(dataframe.iloc[i][col]) for col in dataframe.columns
-        ]) for i in range(min(len(dataframe), max_rows))]
-    )
-
-
+# Define the Dashboard
 external_stylesheets = ['sheet.css']
-#external_stylesheets = ['https://codepen.io/chriddyp/pen/bWLwgP.css']
+app = dash.Dash(__name__, external_stylesheets=external_stylesheets)7
 
-app = dash.Dash(__name__, external_stylesheets=external_stylesheets)
+# Make it work without internet
 app.css.config.serve_locally = True
 app.scripts.config.serve_locally = True
 
+# Define the content of the dashboard
 app.layout = html.Div(children=[
+    # Title
     html.H4(children='Table test'),
-    generate_table(df)
+
+    # Define table
+    dt.DataTable(
+        rows=DATA_TABLE.to_dict('records'),
+
+        # optional - sets the order of columns
+        columns=sorted(DATA_TABLE.columns),
+
+        row_selectable=False,
+        filterable=True,
+        sortable=True,
+        selected_row_indices=[],
+        id='table'
+    ),
+
+    # Define autorefresh interval
+    dcc.Interval(
+        id='interval-component',
+        interval=5*1000, # in milliseconds
+        n_intervals=0)
 ])
 
+
+# Treatment when autorefresh event occurs, here we read INPUT_SCAN and update table
+@app.callback(
+    Output('table', 'rows'),
+    [Input('interval-component', 'n_intervals')])
+def update_table(a):
+    DATA_TABLE = pd.read_csv(INPUT_SCAN)
+    return DATA_TABLE.to_dict('records')
+
+
+# Run the server
 if __name__ == '__main__':
     app.run_server(debug=True)
