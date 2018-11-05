@@ -25,7 +25,8 @@ class Scanner(object):
             sys.exit(1)
 
 
-    def start_scan(self):
+    def start_scan(self, ip_address):
+        SCAN_NETWORK=ip_address
         self.nm.scan(SCAN_NETWORK, SCAN_PORTNUM)
     
         # Writes to stdout
@@ -35,7 +36,7 @@ class Scanner(object):
         self.export_scan_csv(self.nm)
 
         # Restart the scan every 5 seconds
-        threading.Timer(5, self.start_scan).start()
+#        threading.Timer(5, self.start_scan).start()
 
 
 
@@ -70,6 +71,3 @@ class Scanner(object):
                     entry = host + ', ' + hostname + ', ' + proto + ', ' + str(port) + ', ' + product + ', ' + version
                     print(entry)
         sys.stdout = stdout
-
-scanner = Scanner()
-scanner.start_scan()

@@ -5,6 +5,11 @@ import dash_html_components as html
 import dash_table_experiments as dt
 from dash.dependencies import Input, Output, State
 import pandas as pd
+from multiprocessing import Process
+import time
+from scan import Scanner
+import re
+import unicodedata
 
 
 # INPUT FILES / READ DATA
@@ -25,7 +30,7 @@ app.layout = html.Div(children=[
     # Title
     html.H4(children='Scan results'),
     dcc.Input(id='username', value='Initial value', type='text'),
-    html.Button(id='submit-button', type='submit', children='Submit'),
+    html.Button(id='submit-button', type='submit', children='Scan'),
     html.Div(id='output_div'),
     # Define table
     dt.DataTable(
@@ -48,6 +53,20 @@ app.layout = html.Div(children=[
         n_intervals=0)
 ])
 
+def scan(ip):
+    scanner = Scanner()
+    scanner.start_scan(ip)
+    
+def valid_ip(address):
+    try:
+        host_bytes = address.split('.')
+        valid = [int(b) for b in host_bytes]
+        valid = [b for b in valid if b >= 0 and b<=255]
+        return len(host_bytes) == 4 and len(valid) == 4
+    except:
+        return False
+
+
 # Traitement de l'input de l'utilisateur
 @app.callback(Output('output_div', 'children'),
                   [Input('submit-button', 'n_clicks')],
@@ -55,7 +74,11 @@ app.layout = html.Div(children=[
                   )
 def update_output(clicks, input_value):
     if clicks is not None:
-        print(clicks, input_value)
+        if not valid_ip(input_value):
+	    return 'This IP format is not valid: "{}"'.format(input_value)
+        p = Process(target=scan, args=(input_value,))
+        p.start()
+        p.join()
 
 # Treatment when autorefresh event occurs, here we read INPUT_SCAN and update table
 @app.callback(
@@ -69,3 +92,4 @@ def update_table(a):
 # Run the server
 if __name__ == '__main__':
     app.run_server(debug=True)
+
