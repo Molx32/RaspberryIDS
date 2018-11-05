@@ -13,7 +13,7 @@ DATA_TABLE = pd.read_csv(INPUT_SCAN, sep=',')
 
 # Define the Dashboard
 external_stylesheets = ['sheet.css']
-app = dash.Dash(__name__, external_stylesheets=external_stylesheets)7
+app = dash.Dash(__name__, external_stylesheets=external_stylesheets)
 
 # Make it work without internet
 app.css.config.serve_locally = True
@@ -22,8 +22,10 @@ app.scripts.config.serve_locally = True
 # Define the content of the dashboard
 app.layout = html.Div(children=[
     # Title
-    html.H4(children='Table test'),
-
+    html.H4(children='Scan results'),
+    dcc.Input(id='username', value='Initial value', type='text'),
+    html.Button(id='submit-button', type='submit', children='Submit'),
+    html.Div(id='output_div'),
     # Define table
     dt.DataTable(
         rows=DATA_TABLE.to_dict('records'),
@@ -45,6 +47,14 @@ app.layout = html.Div(children=[
         n_intervals=0)
 ])
 
+# Traitement de l'input de l'utilisateur
+@app.callback(Output('output_div', 'children'),
+                  [Input('submit-button', 'n_clicks')],
+                  [State('username', 'value')],
+                  )
+def update_output(clicks, input_value):
+    if clicks is not None:
+        print(clicks, input_value)
 
 # Treatment when autorefresh event occurs, here we read INPUT_SCAN and update table
 @app.callback(
