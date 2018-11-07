@@ -5,12 +5,27 @@ import dash_html_components as html
 import dash_table_experiments as dt
 from dash.dependencies import Input, Output, State
 import pandas as pd
+
 from multiprocessing import Process
+import subprocess
 import time
 from scan import Scanner
 import re
 import unicodedata
 
+# Used to handle SIGINT signal
+import signal
+import sys
+
+
+def signal_handler(sig, frame):
+    print('\nStopping apache2...')
+    subprocess.check_call("systemctl stop apache2".split())
+    sys.exit(0)
+
+# Start apache2
+subprocess.check_call("systemctl start apache2".split())
+signal.signal(signal.SIGINT, signal_handler)
 
 # INPUT FILES / READ DATA
 # This file will be updated by 'scan.py', and read by the web server
@@ -87,7 +102,6 @@ def update_output(clicks, input_value):
 def update_table(a):
     DATA_TABLE = pd.read_csv(INPUT_SCAN)
     return DATA_TABLE.to_dict('records')
-
 
 # Run the server
 if __name__ == '__main__':
