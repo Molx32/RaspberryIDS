@@ -29,6 +29,10 @@ signal.signal(signal.SIGINT, signal_handler)
 INPUT_SCAN = 'data/scan.csv'
 DATA_TABLE = pd.read_csv(INPUT_SCAN, sep=',')
 
+# Input for snort alerts
+INPUT_SCAN_alerts = '/var/log/alert.csv'
+DATA_TABLE_alerts = pd.read_csv(INPUT_SCAN_alerts, sep=',')
+
 # Define the Dashboard
 app = dash.Dash(__name__)
 app.config['suppress_callback_exceptions']=True
@@ -110,6 +114,29 @@ page_error = html.Div([  # 404
 
     ], className="page"),
 
+### ALERT PAGE ###
+page_alerts = html.Div([
+	Header(app),
+    html.H4(children=' '),
+    dt.DataTable(
+        rows=DATA_TABLE_alerts.to_dict('record'),
+        columns=DATA_TABLE_alerts.columns,
+        row_selectable=False,
+        filterable=True,
+        sortable=True,
+        selected_row_indices=[],
+        id='tablee',
+        editable=False
+    ),
+
+# Define autorefresh interval
+    dcc.Interval(
+        id='interval-componentt',
+        interval=5*1000, # in milliseconds
+        n_intervals=0)
+    ], className="page"),
+
+
 ### SCAN PAGE ###
 page_scan = html.Div(id='scan', children=[
     Header(app),
@@ -177,6 +204,8 @@ def display_page(pathname):
         return page_scan
     elif pathname == '/welcome' or pathname == '/RaspberryPiReport/welcome':
     	return page_welcome
+    elif pathname == '/alerts' or pathname == '/RaspberryPiReport/alerts':
+    	return page_alerts
     else:
 		return page_error
 
@@ -203,7 +232,15 @@ def update_table(a):
     DATA_TABLE = pd.read_csv(INPUT_SCAN)
     return DATA_TABLE.to_dict('records')
 
+@app.callback(
+    Output('tablee', 'rows'),
+    [Input('interval-componentt', 'n_intervals')])
+def update_tablee(a):
+    DATA_TABLE_alerts = pd.read_csv(INPUT_SCAN_alerts)
+    return DATA_TABLE_alerts.to_dict('records')
+
 # Run the server
 if __name__ == '__main__':
+    subprocess.Popen(["snort", "-dev", "-l", "/home/pi/SNORT_LOG_FILE","-c", "/home/pi/SNORT/snort-2.9.12/etc/snort.conf", "-i", "eth0"])
     app.run_server(debug=True)
 
