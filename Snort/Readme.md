@@ -1,4 +1,5 @@
-This file describes the configuration file snort.conf
+## Snort configuration file
+This section describes the configuration file snort.conf
 
 When installing snort, we don't get rule files, so I commented them, and added two alerts that describe DoS attack and FTP 
 anonymous login attempt:
@@ -13,3 +14,46 @@ IP address, Mac address and port.
 To do so, we added the following line:
 
 *output alert_csv:/var/log/alert.csv msg,timestamp,dst,src,ethdst,ethsrc,dstport,srcport*
+
+## Integrating Snort to the Web interface
+###### Changing the file header.py
+This section describes the changes done in the file header.py
+
+We add the following line to add "Alerts" tab:
+```
+dcc.Link('Alerts   ', href='/RaspberryPiReport/alerts', className="tab")
+```
+
+###### Changing the file webServer.py
+This section describes the changes done in the file webServer.py
+
+We specify the location of the CSV Snort alerts file, and create a variable that will read the file:
+```
+INPUT_SCAN_alerts = '/var/log/alert.csv'
+DATA_TABLE_alerts = pd.read_csv(INPUT_SCAN_alerts, sep=',')
+```
+
+We create the layout for the page that will contain the alerts:
+```
+page_alerts = html.Div([
+	  ...
+    ...
+    ], className="page"),
+
+```
+
+We add the page Alert in the function display_page(pathname)
+```
+...
+elif pathname == '/alerts' or pathname == '/RaspberryPiReport/alerts':
+    	return page_alerts
+...
+```
+We add a callback to refresh the page, and finally we specify in the main() function that we will run the Snort command:
+```
+subprocess.Popen(["snort", "-dev", "-l", "/home/pi/SNORT_LOG_FILE","-c", "/home/pi/SNORT/snort-2.9.12/etc/snort.conf", "-i", "eth0"])
+```
+There are things to take into consideration:
+- Logging file here is /home/pi/SNORT_LOG_FILE
+- Configuration file is located in /home/pi/SNORT/snort-2.9.12/etc/snort.conf
+- The interface that we are monitoring is eth0
