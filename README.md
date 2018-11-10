@@ -72,3 +72,12 @@ $ dpkg -i snort_2.9.8.3-1_armhf.deb
 ```
 
 Now Snort can be used.
+
+## 2. Using Snort
+We will be using Snort as a NIDS, so basically we will be having a logging directory and an alert file, and we will receive alerts in the alert file.
+
+First, we create a logging directory:
+``` sh
+$ mkdir /home/pi/SNORT_LOG_FILE
+``` 
+Then, we configure the configuration file "snort.conf" (in my case it's installed in /home/pi/SNORT/snort-2.9.12/etc/snort.conf) as provided in the main repository. 
