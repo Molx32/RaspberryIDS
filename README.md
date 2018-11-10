@@ -80,4 +80,4 @@ First, we create a logging directory:
 ``` sh
 $ mkdir /home/pi/SNORT_LOG_FILE
 ``` 
-Then, we configure the configuration file "snort.conf" (in my case it's installed in /home/pi/SNORT/snort-2.9.12/etc/snort.conf) as provided in the main repository. 
+Then, we configure the configuration file "snort.conf" (in my case it's installed in /home/pi/SNORT/snort-2.9.12/etc/snort.conf) as provided in the main repository (Folder Snort). 
