@@ -10,6 +10,7 @@ import pandas as pd
 # Processes libraries
 from multiprocessing import Process
 import time
+import subprocess
 
 # Local libraries
 from utils import *
@@ -17,8 +18,14 @@ from utils import *
 # Signal libraries
 import signal
 
+# Pie chart
+import plotly.plotly as py
+import plotly.graph_objs as go
+
 # test
 from header import Header
+
+
 
 # Start apache2
 subprocess.check_call("systemctl start apache2".split())
@@ -26,8 +33,12 @@ signal.signal(signal.SIGINT, signal_handler)
 
 # INPUT FILES / READ DATA
 # This file will be updated by 'scan.py', and read by the web server
-INPUT_SCAN = 'data/scan.csv'
-DATA_TABLE = pd.read_csv(INPUT_SCAN, sep=',')
+INPUT_SCAN 	= 'data/scan.csv'
+SCAN_TABLE 	= pd.read_csv(INPUT_SCAN, sep=',')
+INPUT_SUMM 	= 'data/summ2.csv'
+SUMM_MAP 	= read_protocol_csv(INPUT_SUMM)
+SUMM_MAP_KEYS = SUMM_MAP.keys()
+SUMM_MAP_VALS = SUMM_MAP.values()
 
 # Define the Dashboard
 app = dash.Dash(__name__)
@@ -41,16 +52,11 @@ app.scripts.config.serve_locally = True
 app.layout = html.Div([
     dcc.Location(id='url', refresh=False),
     html.Div(id='page-content'),
-	html.Div(dt.DataTable(rows=[{}]), style={'display': 'none'})
+
+    # Bizarrement on a besoin de 'declarer' certains objets, sinon il y a
+    # des bugs avec les callbacks.
+	html.Div(dt.DataTable(rows=[{}]), style={'display': 'none'}),
 ])
-
-
-
-
-
-
-
-
 
 
 
@@ -79,7 +85,7 @@ page_welcome = html.Div([
 					A and B passes all traffic (send and receive data\
 					streams) through unimpeded in real time, but also\
 					copies that same data to its monitor port, enabling\
-					a third party to listen.", style={'text-align': 'justify'}),
+					a third party to listen.", style={'text-align': 'justify', 'padding':'2px'}),
 				], className="six columns"),
 			html.Div([
 				html.H6('What is the project ?', className="gs-header gs-table-header padded"),
@@ -96,7 +102,7 @@ page_welcome = html.Div([
 					be raised and shown on the web interface.<br><br>\
 					This project is realised through the SSIR (Information\
 					Systems and Network Securiy) of the Paul Sabatier\
-					University, in Toulouse, France.", style={'text-align': 'justify'}),
+					University, in Toulouse, France.", style={'text-align': 'justify', 'padding':'2px'}),
 				], className="six columns"),
 			], className="row"),
 		])
@@ -110,6 +116,69 @@ page_error = html.Div([  # 404
 
     ], className="page"),
 
+### SUMMARY PAGE ###
+page_summ = html.Div(id='summary', children=[
+	Header(app),
+
+	# Title
+    html.H4(children='Summary'),
+    html.P(id='aaa'),
+    html.Button(id='snif_reset', type='submit', children='Reset'),
+    html.Button(id='snif_start', type='submit', children='Start'),
+    html.Button(id='snif_stop', type='submit', children='Stop'),
+    
+    # Display Bandwidth squares
+    html.Div([indicator("#00cc96", "Bandwidth Rx", "summary_bdwidth_rx"),
+    	indicator("#00cc96", "Bandwidth Tx", "summary_bdwidth_tx"),
+    	indicator("#00cc96", "mamene3", "66")
+    	], className='row'
+    ),
+
+    # Display graph
+    html.Div(id='summary_div'),
+	dcc.Graph(
+        id = "graph-1",
+        figure={
+            'data': [
+                go.Bar(
+                    x = SUMM_MAP_KEYS,
+                    y = SUMM_MAP_VALS,
+                    marker = {
+                      "color": "rgb(191, 44, 12)",
+                      "line": {
+                        "color": "rgb(255, 255, 255)",
+                        "width": 2
+                      }
+                    },
+                ),
+            ]},
+
+        # Montrer ou non les options permettant de modifier le graphe
+        config={
+            'displayModeBar': False
+        }),
+
+
+		# DIAGRAMME EN CAMEMBERT
+			# dcc.Graph(
+		 #        id = "graph-1",
+		 #        figure={
+		 #            'data': [
+		 #                go.Pie(
+		 #                    labels=SUMM_MAP_KEYS,
+		 #                    values=SUMM_MAP_VALS,
+		 #                ),
+		 #            ]}, 
+			# style={'text-align': 'center'}),
+
+		# Define autorefresh interval
+	    dcc.Interval(
+	        id='refresh-summary',
+	        interval=2*1000, # in milliseconds
+	        n_intervals=0)
+
+	    ], className="page"),
+
 ### SCAN PAGE ###
 page_scan = html.Div(id='scan', children=[
     Header(app),
@@ -117,27 +186,28 @@ page_scan = html.Div(id='scan', children=[
     # Title
     html.H4(children='Scan results'),
     html.P('IP Address must follow one of these formats:\n'),
-    dcc.Input(id='username', value='IP Adress', type='text'),
-    html.Button(id='submit-button', type='submit', children='Scan'),
+    dcc.Input(id='ip', value='IP Adress', type='text'),
+    html.Button(id='submit-button-scan', type='submit', children='Scan'),
     html.Div(id='output_div'),
 
+    # Display table
     dt.DataTable(
-        rows=DATA_TABLE.to_dict('records'),
+        rows=SCAN_TABLE.to_dict('records'),
 
         # optional - sets the order of columns
-        columns=sorted(DATA_TABLE.columns),
+        columns=sorted(SCAN_TABLE.columns),
 
         row_selectable=False,
         filterable=True,
         sortable=True,
         selected_row_indices=[],
-        id='table',
+        id='table-scan',
         editable=False
     ),
 
     # Define autorefresh interval
     dcc.Interval(
-        id='interval-component',
+        id='refresh-scan',
         interval=5*1000, # in milliseconds
         n_intervals=0)
 
@@ -165,43 +235,131 @@ for js in external_js:
 
 
 
+#####################################
+#####################################
+## 			CALLBACKS 			   ##
+#####################################
+#####################################
 
-###################################
-# 			CALLBACKS 			  #
-###################################
+######################
+# HANDLE USER EVENTS #
+######################
 # LOAD PAGE
 @app.callback(dash.dependencies.Output('page-content', 'children'),
               [dash.dependencies.Input('url', 'pathname')])
 def display_page(pathname):
     if pathname == '/RaspberryPiReport' or pathname == '/RaspberryPiReport/scan':
         return page_scan
+    elif pathname == '/summary' or pathname == '/RaspberryPiReport/summary':
+    	return page_summ
     elif pathname == '/welcome' or pathname == '/RaspberryPiReport/welcome':
     	return page_welcome
     else:
 		return page_error
 
-
 # PARSE AND SCAN IP
 @app.callback(Output('output_div', 'children'),
-                  [Input('submit-button', 'n_clicks')],
-                  [State('username', 'value')],
+                  [Input('submit-button-scan', 'n_clicks')],
+                  [State('ip', 'value')],
                   )
-def update_output(clicks, input_value):
+def update_scan(clicks, input_value):
     if clicks is not None:
         if not valid_ip(input_value):
-	    return 'This IP format is not valid: "{}"'.format(input_value)
+	    	return 'This IP format is not valid: "{}"'.format(input_value)
         p = Process(target=scan, args=(input_value,))
         p.start()
         p.join()
 
 
-# HANDLE AUTOREFRESH EVENTS
+
+
+#############################
+# HANDLE AUTOREFRESH EVENTS #
+#############################
+# AUTOREFRESH SCAN
 @app.callback(
-    Output('table', 'rows'),
-    [Input('interval-component', 'n_intervals')])
+    Output('table-scan', 'rows'),
+    [Input('refresh-scan', 'n_intervals')])
 def update_table(a):
-    DATA_TABLE = pd.read_csv(INPUT_SCAN)
-    return DATA_TABLE.to_dict('records')
+    SCAN_TABLE = pd.read_csv(INPUT_SCAN)
+    return SCAN_TABLE.to_dict('records')
+
+# AUTOREFRESH SCAN | BANDWIDTH RECEIVING
+@app.callback(
+    Output('summary_bdwidth_rx', 'children'),
+    [Input('refresh-summary', 'n_intervals')])
+def update_summary_bandwidth_rx(a):
+	rx1 = get_bytes('rx')
+	time.sleep(1)
+	rx2 = get_bytes('rx')
+	rx_speed = round((rx2 - rx1)/1000000.0, 4)
+	return_value = rx_speed*1000
+	return str(return_value)
+
+# AUTOREFRESH SCAN | BANDWIDTH RECEIVING
+@app.callback(
+    Output('summary_bdwidth_tx', 'children'),
+    [Input('refresh-summary', 'n_intervals')])
+def update_summary_bandwidth_tx(a):
+	tx1 = get_bytes('tx')
+	time.sleep(1)
+	tx2 = get_bytes('tx')
+	tx_speed = round((tx2 - tx1)/1000000.0, 4)
+	return_value = tx_speed*1000
+	return str(return_value)
+
+
+
+
+
+
+
+
+# TEST
+@app.callback(
+			Output('graph-1', 'figure'),
+            [Input('refresh-summary', 'n_intervals')])
+def test(a):
+	SUMM_MAP 	= read_protocol_csv(INPUT_SUMM)
+	SUMM_MAP_KEYS = SUMM_MAP.keys()
+	SUMM_MAP_VALS = SUMM_MAP.values()
+
+# RESET
+@app.callback(Output('1', '1'),
+                  [Input('submit-button', 'n_clicks')],
+                  [State('snif_reset', 'value')],
+                  )
+def reset_snif(clicks, input_value):
+    if clicks is not None:
+    	# clear the file
+        open(INPUT_SUMM, 'w').close()
+        subprocess.check_call("killall tshark".split())
+        p = Process(target=scan, args=(input_value,))
+        p.start()
+
+# START
+@app.callback(Output('aaa', 'title'),
+			[Input('snif_start', 'n_clicks')])
+def start_snif(clicks):
+	if clicks is not None:
+		p = Process(target=tshark)
+        p.start()
+        # p.join()
+
+# STOP
+@app.callback(Output('3', '3'),
+			[Input('snif_stop', 'n_clicks')])
+def stop_snif(clicks, input_value):
+    if clicks is not None:
+        subprocess.check_call("killall tshark".split())
+        print 'killed'
+
+
+
+
+
+
+
 
 # Run the server
 if __name__ == '__main__':
