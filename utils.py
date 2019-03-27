@@ -7,6 +7,9 @@ import dash_core_components as dcc
 import dash_html_components as html
 import dash_table_experiments as dt
 
+# Pie chart
+import plotly.plotly as py
+import plotly.graph_objs as go
 
 import time
 import subprocess
@@ -14,6 +17,9 @@ import signal
 import sys
 import re
 import pandas as pd
+
+
+from scapy.all import *
 
 # Function called when SIGINT is received i.e. when Ctrl + C is pressed
 # It stops apache2 server
@@ -27,10 +33,6 @@ def scan(ip):
     scanner = Scanner()
     scanner.start_scan(ip)
 
-def snif():
-	tshark_command = ''
-	subprocess.check_call("systemctl stop apache2".split())
-
 # Function to check whether the IP is valid or not
 def valid_ip(address):
     try:
@@ -42,17 +44,6 @@ def valid_ip(address):
         return False
 
 # thark -i wlan0 -T fields -e eth.src -e eth.dst -e ip.src -e ip.dst -e _ws.col.Protocol -E header=y -E separator=, -E quote=d -E occurrence=f > data/summ.csv
-CSV_SUMMARY_PROTO_COL = '_ws.col.Protocol'
-protocol_map = {}
-def read_protocol_csv(csv):
-	proto_col = pd.read_csv(csv, sep=',', usecols=[CSV_SUMMARY_PROTO_COL])
-	for line in proto_col['_ws.col.Protocol']:
-		# If proto not in list, add it
-		if not line in protocol_map:
-			protocol_map[line] = 1
-		else:
-			protocol_map[line] = protocol_map[line] + 1
-	return protocol_map
 
 
 # Renvoie les encadres du SUMMARY
@@ -80,7 +71,31 @@ def get_bytes(t, iface='wlan0'):
         data = f.read();
         return int(data)
 
-def tshark():
-	command='tshark -i wlan0 -T fields -e eth.src -e eth.dst -e ip.src -e ip.dst -e _ws.col.Protocol -E header=y -E separator=, -E quote=d -E occurrence=f'
-	with open('data/summ2.csv', "w") as outfile:
-		subprocess.check_call(command.split(), stdout=outfile)
+
+def update_protocol_graph(SUMM_MAP_KEYS, SUMM_MAP_VALS):
+	SUMM_MAP_KEYS = []
+	SUMM_MAP_VALS = []
+
+	return html.Div(
+        [
+	        dcc.Graph(
+	        id = "graph-1",
+	        figure={
+	            'data': [
+	                go.Bar(
+	                    x = SUMM_MAP_KEYS,
+	                    y = SUMM_MAP_VALS,
+	                    marker = {
+	                      "color": "rgb(191, 44, 12)",
+	                      "line": {
+	                        "color": "rgb(255, 255, 255)",
+	                        "width": 2
+	                      }
+	                    },
+	                ),
+	            ]},
+
+	        # Montrer ou non les options permettant de modifier le graphe
+	        config={
+	            'displayModeBar': False
+	        })])
