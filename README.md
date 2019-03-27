@@ -7,11 +7,12 @@ Raspberry Pi IDS is a university project which aims to plug a Raspberry Pi on a 
 
 ### a. Download the Dash framework for Python
 ``` sh
-$ pip intall dash
-$ pip install dash-html-components
-$ pip install dash-core-components
-$ pip install dash-table-experiments
-$ pip install pandas
+$ apt install python3-pip
+$ pip3 intall dash
+$ pip3 install dash-html-components
+$ pip3 install dash-core-components
+$ pip3 install dash-table-experiments
+$ pip3 install pandas
 ```
 
 ### b. Install Snort
@@ -72,3 +73,9 @@ $ dpkg -i snort_2.9.8.3-1_armhf.deb
 ```
 
 Now Snort can be used.
+
+### b. Install additional libraries
+``` sh
+$ pip3 install scapy
+$ apt install python3-libnmap
+```
