@@ -77,5 +77,6 @@ Now Snort can be used.
 ### b. Install additional libraries
 ``` sh
 $ pip3 install scapy
+$ pip3 install psutil
 $ apt install python3-libnmap
 ```
