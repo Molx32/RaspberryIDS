@@ -59,3 +59,4 @@ There are things to take into consideration:
 - Logging file here is /home/pi/SNORT_LOG_FILE
 - Configuration file is located in /home/pi/SNORT/snort-2.9.12/etc/snort.conf
 - The interface that we are monitoring is eth0
+- The /var/log/alert.csv must be created and contains the following line: msg,date,ipdst,ipsrc,macdst,macsrc,portdst,portsrc
