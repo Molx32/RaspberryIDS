@@ -202,6 +202,12 @@ page_alerts = html.Div([
         id='tablee',
         editable=False
     ),
+    # Define autorefresh interval
+    dcc.Interval(
+        id='interval-componentt',
+        interval=5*1000, # in milliseconds
+        n_intervals=0)
+    ], className="page"),
 #_________________________________________________________________________________________________#
 
 
