@@ -36,6 +36,8 @@ def get_menu():
 
         dcc.Link('Welcome   ', href='/RaspberryPiReport/welcome', className="tab first"),
 
+        dcc.Link('Summary   ', href='/RaspberryPiReport/summary', className="tab"),
+
         dcc.Link('Scan   ', href='/RaspberryPiReport/scan', className="tab")
 
     ], className="row ")

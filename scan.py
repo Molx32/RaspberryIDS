@@ -51,7 +51,7 @@ class Scanner(object):
                 print('Protocol : %s' % proto)
 
                 lport = nm[host][proto].keys()
-                lport.sort()
+                sorted(lport)
                 for port in lport:
                     print ('port : %s\tstate : %s' % (port, nm[host][proto][port]['product']))
 
@@ -63,7 +63,7 @@ class Scanner(object):
         for host in nm.all_hosts():
             for proto in nm[host].all_protocols():
                 lport = nm[host][proto].keys()
-                lport.sort()
+                sorted(lport)
                 for port in lport:
                     hostname    = nm[host].hostname()
                     product     = nm[host][proto][port]['product']
