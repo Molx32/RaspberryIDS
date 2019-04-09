@@ -30,6 +30,9 @@ import plotly.graph_objs as go
 # Scapy library
 from scapy.all import *
 
+# Use bash in python
+import os
+
 
 
 # Start apache2
@@ -40,6 +43,9 @@ signal.signal(signal.SIGINT, signal_handler)
 # This file will be updated by 'scan.py', and read by the web server
 INPUT_SCAN     = 'data/scan.csv'
 SCAN_TABLE     = pd.read_csv(INPUT_SCAN, sep=',')
+# This file will be updated by 'cve.sh', and read by the web server
+INPUT_CVE     = 'data/cve.csv'
+CVE_TABLE     = pd.read_csv(INPUT_CVE, sep=',')
 
 SUMM_MAP     = {}
 SUMM_MAP_KEYS = SUMM_MAP.keys()
@@ -149,7 +155,7 @@ page_summ = html.Div(id='summary', children=[
     html.H4(children='Summary'),
     html.Button(id='snif_reset', type='submit', children='Reset'),
     html.Button(id='snif_start', type='submit', children='Start'),
-    
+
     # Display Bandwidth squares
     html.Div([indicator("#00cc96", "Bandwidth Rx", "summary_bdwidth_rx"),
         indicator("#00cc96", "Bandwidth Tx", "summary_bdwidth_tx"),
@@ -160,7 +166,7 @@ page_summ = html.Div(id='summary', children=[
     # Display graph
     html.Div(id='summary_div'),
     html.Div([update_protocol_graph([],[])], id='graph-protocols-div'),
-    
+
 
 
         # DIAGRAMME EN CAMEMBERT
@@ -172,7 +178,7 @@ page_summ = html.Div(id='summary', children=[
          #                    labels=SUMM_MAP_KEYS,
          #                    values=SUMM_MAP_VALS,
          #                ),
-         #            ]}, 
+         #            ]},
             # style={'text-align': 'center'}),
 
         # Define autorefresh interval
@@ -213,6 +219,41 @@ page_scan = html.Div(id='scan', children=[
     # Define autorefresh interval
     dcc.Interval(
         id='refresh-scan',
+        interval=5*1000, # in milliseconds
+        n_intervals=0)
+
+], className="page")
+#_________________________________________________________________________________________________#
+
+### CVE PAGE ###
+page_cve = html.Div(id='cve', children=[
+    Header(app),
+
+    # Title
+    html.H4(children='CVE results'),
+    html.P('IP Address must follow one of these formats:\n'),
+    dcc.Input(id='ipcve', value='CVE', type='text'),
+    html.Button(id='submit-button-cve', type='submit', children='CVE'),
+    html.Div(id='output_div2'),
+
+    # Display table
+    dt.DataTable(
+        rows=CVE_TABLE.to_dict('records'),
+
+        # optional - sets the order of columns
+        #columns=sorted(CVE_TABLE.columns),
+
+        row_selectable=False,
+        filterable=True,
+        sortable=True,
+        selected_row_indices=[],
+        id='table-cve',
+        editable=False
+    ),
+
+    # Define autorefresh interval
+    dcc.Interval(
+        id='refresh-cve',
         interval=5*1000, # in milliseconds
         n_intervals=0)
 
@@ -276,6 +317,13 @@ def update_scan(clicks, input_value):
         p.start()
         p.join()
 
+#CVE BUTTON ACTION
+@app.callback(Output('output_div2', 'children'),
+                  [Input('submit-button-cve', 'n_clicks_cve')],
+                  [State('ipcve', 'value')],
+                  )
+def update_cve(value):
+    subprocess.call(['./cve.sh {}'.format(value)])
 
 
 
@@ -392,4 +440,3 @@ def reset_snif(clicks):
 # Run the server
 if __name__ == '__main__':
     app.run_server(debug=True)
-

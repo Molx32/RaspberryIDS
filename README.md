@@ -80,3 +80,7 @@ $ pip3 install scapy
 $ pip3 install psutil
 $ apt install python3-libnmap
 ```
+
+### c. CVE
+In order to detect CVE in our dashboard you need a nmap script based on Vulners.com API : https://github.com/vulnersCom/nmap-vulners
+You have to move the script into the nmap script folder (/usr/share/nmap/scripts/)

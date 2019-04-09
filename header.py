@@ -12,7 +12,7 @@ def Header(app):
 
 def get_logo(app):
     logo = html.Div([
-    html.Div([        
+    html.Div([
         html.Div(html.Img(src=app.get_asset_url('ut3_logo.png'), height='113', width='340')),
     ], className="ten columns padded"),
     ], className="row gs-header")
@@ -38,7 +38,9 @@ def get_menu():
 
         dcc.Link('Summary   ', href='/RaspberryPiReport/summary', className="tab"),
 
-        dcc.Link('Scan   ', href='/RaspberryPiReport/scan', className="tab")
+        dcc.Link('Scan   ', href='/RaspberryPiReport/scan', className="tab"),
+
+        dcc.Link('CVE   ', href='/RaspberryPiReport/cve', className="tab")
 
     ], className="row ")
     return menu
